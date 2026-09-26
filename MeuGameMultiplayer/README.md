@@ -1,8 +1,10 @@
 # MeuGame Multiplayer
 
-Demo local para testar o `ColyseusClient` da BornEngine com uma sala Colyseus autoritativa. Cada jogador é um `GameObject` com um `SceneNodeComponent`; os snapshots da sala criam, atualizam e removem esses objetos usando o `sessionId` como chave. O servidor recebe somente a direção do movimento e controla as posições.
+Demo nativa para testar a API class-first da BornEngine com uma sala Colyseus autoritativa. `Game` é dono do renderer, input, cena, malha e cliente de rede. Cada jogador é um `GameObject` sincronizado com um `SceneNodeComponent`; os snapshots da sala criam, atualizam e removem esses objetos usando o `sessionId` como chave. O servidor recebe somente a direção do movimento e controla as posições.
 
 O projeto é separado do `MeuGame/` para preservar as alterações locais desse jogo.
+
+O código já está preparado para a API class-first da próxima release da BornEngine. O manifesto mantém o pin público atual até a revisão `0.6.0` ser publicada; após a publicação, esse pin e o lockfile devem ser atualizados juntos.
 
 ## Requisitos
 
