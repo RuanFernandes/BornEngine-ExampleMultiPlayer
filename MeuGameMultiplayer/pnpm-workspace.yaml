@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+patchedDependencies:
+  '@bornengine/engine@0.5.1': patches/@bornengine__engine@0.5.1.patch

@@ -1,0 +1,42 @@
+# MeuGame Multiplayer
+
+Demo local para testar o `ColyseusClient` da BornEngine com uma sala Colyseus autoritativa. Cada jogador é um `GameObject` com um `SceneNodeComponent`; os snapshots da sala criam, atualizam e removem esses objetos usando o `sessionId` como chave. O servidor recebe somente a direção do movimento e controla as posições.
+
+O projeto é separado do `MeuGame/` para preservar as alterações locais desse jogo.
+
+## Requisitos
+
+- Node.js 20.9 ou mais recente
+- pnpm
+- Perry instalado e configurado para compilar projetos BornEngine
+
+## Iniciar
+
+Na raiz deste repositório, em um terminal, inicie o servidor local:
+
+```sh
+cd colyseus-test-server
+npm install
+npm start
+```
+
+Em outro terminal, instale e execute o jogo:
+
+```sh
+cd MeuGameMultiplayer
+pnpm install
+pnpm test
+pnpm build
+pnpm start
+```
+
+Abra uma segunda janela do jogo com `pnpm start`. Os dois clientes entram na sala `arena`; mova cada jogador com WASD ou as setas e acompanhe os nomes e posições sincronizados no HUD.
+
+O teste de integração do servidor pode ser executado separadamente, com o servidor ativo:
+
+```sh
+cd colyseus-test-server
+npm run test:multiplayer
+```
+
+Por padrão, o cliente conecta em `ws://127.0.0.1:2567`. Para testar em outro computador ou celular na mesma rede, ajuste `SERVER_URL` em `main.ts` para o endereço acessível do servidor.

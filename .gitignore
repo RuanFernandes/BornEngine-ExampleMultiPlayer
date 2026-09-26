@@ -1,0 +1,21 @@
+# JavaScript dependencies and generated output
+**/node_modules/
+**/build/
+**/dist/
+**/coverage/
+**/.perry-cache/
+**/*.o
+**/*.a
+**/*.so
+**/*.dylib
+**/*.dll
+**/*.exe
+MeuGameMultiplayer/meugame-multiplayer
+
+# Local environment and logs
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+npm-debug.log*
+pnpm-debug.log*

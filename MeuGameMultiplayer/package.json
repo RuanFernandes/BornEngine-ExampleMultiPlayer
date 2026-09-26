@@ -1,0 +1,24 @@
+{
+  "name": "bornengine-multiplayer-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Colyseus multiplayer demo built with BornEngine",
+  "scripts": {
+    "build": "perry compile main.ts -o meugame-multiplayer",
+    "start": "./meugame-multiplayer",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@bornengine/engine": "github:RuanFernandes/BornEngine#542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  },
+  "perry": {
+    "allow": {
+      "nativeLibrary": [
+        "@bornengine/engine/*"
+      ]
+    }
+  }
+}

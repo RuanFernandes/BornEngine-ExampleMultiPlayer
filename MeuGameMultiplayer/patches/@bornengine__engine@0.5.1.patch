@@ -1,0 +1,121 @@
+diff --git a/src/colyseus/index.ts b/src/colyseus/index.ts
+index eef4dc81d10ad512c4c34ab54b74ac5bf46002b2..c56c6c36bc589b7519021f38e2e4b1d3b5287216 100644
+--- a/src/colyseus/index.ts
++++ b/src/colyseus/index.ts
+@@ -29,6 +29,12 @@ export interface ColyseusError extends Error {
+   reason?: unknown;
+ }
+ 
++/** Join listeners for synchronous native game loops. */
++export interface RoomJoinCallbacks<TState = any> {
++  onJoin(room: Room<TState>): void;
++  onError(error: ColyseusError): void;
++}
++
+ interface NativeRoomEvent {
+   kind: string;
+   room: number;
+@@ -47,8 +53,10 @@ interface NativeRoomEvent {
+ 
+ interface PendingJoin {
+   room: Room;
+-  resolve: (room: Room) => void;
+-  reject: (error: Error) => void;
++  resolve?: (room: Room) => void;
++  reject?: (error: Error) => void;
++  onJoin?: (room: Room) => void;
++  onError?: (error: ColyseusError) => void;
+ }
+ 
+ interface MessageListener {
+@@ -84,6 +92,19 @@ export class ColyseusClient {
+     return this.startJoin<TState>(0, roomName, options);
+   }
+ 
++  /**
++   * Join or create a room and deliver the result inside poll()/beginDrawing().
++   * This callback API is suitable for Perry's blocking native runGame loop,
++   * where Promise continuations cannot run until the loop yields.
++   */
++  joinOrCreateWithCallbacks<TState = any>(
++    roomName: string,
++    options: object,
++    callbacks: RoomJoinCallbacks<TState>,
++  ): void {
++    this.startJoinWithCallbacks<TState>(0, roomName, options, callbacks);
++  }
++
+   /** Always create a room with the given name. */
+   create<TState = any>(roomName: string, options: object = {}): Promise<Room<TState>> {
+     return this.startJoin<TState>(1, roomName, options);
+@@ -118,7 +139,10 @@ export class ColyseusClient {
+     this.disposed = true;
+     bloom_colyseus_client_dispose(this.handle);
+     for (let index = 0; index < this.pendingJoins.length; index++) {
+-      this.pendingJoins[index].reject(new Error('Colyseus client was disposed'));
++      const pending = this.pendingJoins[index];
++      const error = new Error('Colyseus client was disposed') as ColyseusError;
++      if (pending.onError !== undefined) pending.onError(error);
++      else pending.reject?.(error);
+     }
+     this.pendingJoins = [];
+     for (let index = 0; index < this.rooms.length; index++) this.rooms[index]._dispose();
+@@ -151,6 +175,38 @@ export class ColyseusClient {
+     });
+   }
+ 
++  private startJoinWithCallbacks<TState>(
++    method: number,
++    target: string,
++    options: object,
++    callbacks: RoomJoinCallbacks<TState>,
++  ): void {
++    if (this.disposed) {
++      callbacks.onError(new Error('Colyseus client has been disposed') as ColyseusError);
++      return;
++    }
++
++    const optionsJson = JSON.stringify(options);
++    const handle = bloom_colyseus_client_join(
++      this.handle,
++      method,
++      target,
++      optionsJson === undefined ? '{}' : optionsJson,
++    );
++    if (handle === 0) {
++      callbacks.onError(new Error('Unable to start Colyseus matchmaking') as ColyseusError);
++      return;
++    }
++
++    const room = new Room<TState>(handle, this);
++    this.rooms.push(room);
++    this.pendingJoins.push({
++      room,
++      onJoin: (joined) => callbacks.onJoin(joined as Room<TState>),
++      onError: callbacks.onError,
++    });
++  }
++
+   static pumpAll(): void {
+     if (ColyseusClient.clients.length === 0) return;
+     bloom_colyseus_poll();
+@@ -185,7 +241,8 @@ export class ColyseusClient {
+       if (index >= 0) {
+         const pending = this.pendingJoins[index];
+         this.pendingJoins.splice(index, 1);
+-        pending.resolve(room);
++        if (pending.onJoin !== undefined) pending.onJoin(room);
++        else pending.resolve?.(room);
+       }
+       return true;
+     }
+@@ -196,7 +253,8 @@ export class ColyseusClient {
+       if (joinIndex >= 0) {
+         const pending = this.pendingJoins[joinIndex];
+         this.pendingJoins.splice(joinIndex, 1);
+-        pending.reject(error);
++        if (pending.onError !== undefined) pending.onError(error);
++        else pending.reject?.(error);
+       } else {
+         room._emitError(error);
+       }
