@@ -9,7 +9,7 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@bornengine/engine": "github:RuanFernandes/BornEngine#542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc"
+    "@bornengine/engine": "^0.6.0"
   },
   "devDependencies": {
     "tsx": "^4.20.6"
