@@ -4,7 +4,7 @@ Demo nativa para testar a API class-first da BornEngine com uma sala Colyseus au
 
 O projeto é separado do `MeuGame/` para preservar as alterações locais desse jogo.
 
-O código já está preparado para a API class-first da próxima release da BornEngine. O manifesto mantém o pin público atual até a revisão `0.6.0` ser publicada; após a publicação, esse pin e o lockfile devem ser atualizados juntos.
+O projeto usa `@bornengine/engine` `^0.6.0`, que fornece a API class-first mostrada no demo.
 
 ## Requisitos
 

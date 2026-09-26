@@ -4,16 +4,13 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@bornengine/engine@0.5.1': 890fc10149b37e445b241ee6e7da1e0bd711e4d8a6c56646042994cbb3f786d4
-
 importers:
 
   .:
     dependencies:
       '@bornengine/engine':
-        specifier: github:RuanFernandes/BornEngine#542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc
-        version: https://codeload.github.com/RuanFernandes/BornEngine/tar.gz/542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc(patch_hash=890fc10149b37e445b241ee6e7da1e0bd711e4d8a6c56646042994cbb3f786d4)
+        specifier: ^0.6.0
+        version: 0.6.0
     devDependencies:
       tsx:
         specifier: ^4.20.6
@@ -21,9 +18,8 @@ importers:
 
 packages:
 
-  '@bornengine/engine@https://codeload.github.com/RuanFernandes/BornEngine/tar.gz/542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc':
-    resolution: {gitHosted: true, integrity: sha512-8SyiHlIvKMaTynI8orvrLiCo7gGeokGiK6h4jOmsL1UV70GXQnI5cmcBzqlKXfWY2ANLMVX9AGVxVK5WKRtaLw==, tarball: https://codeload.github.com/RuanFernandes/BornEngine/tar.gz/542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc}
-    version: 0.5.1
+  '@bornengine/engine@0.6.0':
+    resolution: {integrity: sha512-+NVfgMFXeq1/ZLmfYUKQm4X4uWAFuv2UUbLoAu3SIx0i3Li9C9MZBbuGVWl7kWoEOpw3gYfsDvfaiY0uLBl+jg==}
 
   '@bornengine/jolt-prebuilt@0.4.1':
     resolution: {integrity: sha512-s5l/Xtfhs5Zya87dy29xZQcS6p3o8/5G+sUwQCIAcTWXTw3SDM4DsS/95sFU8tx0Zd30PsL79sN7SsU+JLuhTw==}
@@ -201,7 +197,7 @@ packages:
 
 snapshots:
 
-  '@bornengine/engine@https://codeload.github.com/RuanFernandes/BornEngine/tar.gz/542e7bbbcae197d14d95cf4363dbb0d3fa5c6bbc(patch_hash=890fc10149b37e445b241ee6e7da1e0bd711e4d8a6c56646042994cbb3f786d4)':
+  '@bornengine/engine@0.6.0':
     dependencies:
       '@bornengine/jolt-prebuilt': 0.4.1
 
