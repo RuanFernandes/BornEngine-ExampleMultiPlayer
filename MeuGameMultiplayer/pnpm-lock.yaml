@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@bornengine/engine':
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.7.0
+        version: 0.7.0
     devDependencies:
       tsx:
         specifier: ^4.20.6
@@ -18,8 +18,8 @@ importers:
 
 packages:
 
-  '@bornengine/engine@0.6.0':
-    resolution: {integrity: sha512-+NVfgMFXeq1/ZLmfYUKQm4X4uWAFuv2UUbLoAu3SIx0i3Li9C9MZBbuGVWl7kWoEOpw3gYfsDvfaiY0uLBl+jg==}
+  '@bornengine/engine@0.7.0':
+    resolution: {integrity: sha512-Hv7PsqKVPln/z0bs+z53aROaChKMw1xYe0WNIfTwR+R5pfiQFmAdokeqNQWA3JpVD6lRsrub0tA3u4VUIqli3g==}
 
   '@bornengine/jolt-prebuilt@0.4.1':
     resolution: {integrity: sha512-s5l/Xtfhs5Zya87dy29xZQcS6p3o8/5G+sUwQCIAcTWXTw3SDM4DsS/95sFU8tx0Zd30PsL79sN7SsU+JLuhTw==}
@@ -197,7 +197,7 @@ packages:
 
 snapshots:
 
-  '@bornengine/engine@0.6.0':
+  '@bornengine/engine@0.7.0':
     dependencies:
       '@bornengine/jolt-prebuilt': 0.4.1
 

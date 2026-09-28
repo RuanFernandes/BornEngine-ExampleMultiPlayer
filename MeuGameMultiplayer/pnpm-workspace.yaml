@@ -1,4 +1,4 @@
 allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
-  - '@bornengine/engine@0.6.0'
+  - '@bornengine/engine@0.6.0 || 0.7.0'
