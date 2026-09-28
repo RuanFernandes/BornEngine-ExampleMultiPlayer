@@ -9,7 +9,7 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@bornengine/engine": "^0.6.0"
+    "@bornengine/engine": "^0.7.0"
   },
   "devDependencies": {
     "tsx": "^4.20.6"

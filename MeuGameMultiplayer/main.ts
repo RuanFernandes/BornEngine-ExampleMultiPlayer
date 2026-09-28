@@ -81,15 +81,7 @@ function normalizedColorIndex(value: number): number {
   return Math.abs(Math.round(value)) % PLAYER_COLORS.length;
 }
 
-const game = new Game({
-  window: { width: WIDTH, height: HEIGHT, title: "MeuGame Multiplayer — BornEngine + Colyseus" },
-  targetFps: 60,
-});
-const world = new GameScene(game);
-const cubeGeometry = createCubeGeometry();
-const cube = new Mesh(game, cubeGeometry.vertices, cubeGeometry.indices);
-
-function attachCube(owner: GameObject, color: Color): SceneNode | null {
+function attachCube(game: Game, cube: Mesh, owner: GameObject, color: Color): SceneNode | null {
   const node = game.sceneGraph.createNode({ name: owner.name });
   if (!node.attachModel(cube) || !node.setColor(color) || !node.setPbr(0.52, 0.12)) {
     game.sceneGraph.remove(node, true);
@@ -106,13 +98,13 @@ function attachCube(owner: GameObject, color: Color): SceneNode | null {
 }
 
 class ArenaFloor extends GameObject {
-  constructor() {
+  constructor(game: Game, cube: Mesh) {
     super({
       name: "Arena floor",
       position: { x: 0, y: -0.22, z: 0 },
       scale: { x: 15, y: 0.35, z: 8.5 },
     });
-    attachCube(this, { r: 38, g: 47, b: 65, a: 255 });
+    attachCube(game, cube, this, { r: 38, g: 47, b: 65, a: 255 });
   }
 }
 
@@ -122,7 +114,7 @@ class NetworkPlayer extends GameObject implements PlayerView {
   private readonly visual: SceneNode | null;
   private colorIndex: number;
 
-  constructor(sessionId: string, snapshot: PlayerSnapshot) {
+  constructor(game: Game, cube: Mesh, sessionId: string, snapshot: PlayerSnapshot) {
     super({
       name: snapshot.name,
       position: { x: snapshot.x, y: 0.58, z: snapshot.z },
@@ -130,7 +122,7 @@ class NetworkPlayer extends GameObject implements PlayerView {
     });
     this.sessionId = sessionId;
     this.colorIndex = normalizedColorIndex(snapshot.color);
-    this.visual = attachCube(this, PLAYER_COLORS[this.colorIndex]);
+    this.visual = attachCube(game, cube, this, PLAYER_COLORS[this.colorIndex]);
     this.ready = this.visual !== null;
     if (this.ready) this.applySnapshot(snapshot);
   }
@@ -149,7 +141,7 @@ class NetworkPlayer extends GameObject implements PlayerView {
   }
 }
 
-function readMovementInput(): MoveInput {
+function readMovementInput(game: Game): MoveInput {
   let x = 0;
   let z = 0;
   if (game.input.isKeyDown(Key.A) || game.input.isKeyDown(Key.LEFT)) x -= 1;
@@ -169,92 +161,108 @@ function sameInput(first: MoveInput, second: MoveInput): boolean {
   return first.x === second.x && first.z === second.z;
 }
 
-const client = new ColyseusClient(game, SERVER_URL);
-const playerViews = new Map<string, NetworkPlayer>();
-let room: Room<ArenaSnapshot> | null = null;
-let snapshot: ArenaSnapshot | null = null;
-let status = "Conectando ao servidor...";
-let lastInput: MoveInput = { x: 9, z: 9 };
+class MultiplayerGame extends Game {
+  private readonly world: GameScene;
+  private readonly cube: Mesh;
+  private readonly client: ColyseusClient;
+  private readonly playerViews = new Map<string, NetworkPlayer>();
+  private room: Room<ArenaSnapshot> | null = null;
+  private snapshot: ArenaSnapshot | null = null;
+  private status = "Conectando ao servidor...";
+  private lastInput: MoveInput = { x: 9, z: 9 };
 
-if (cube.isLoaded) world.add(new ArenaFloor());
+  constructor() {
+    super({
+      window: { width: WIDTH, height: HEIGHT, title: "MeuGame Multiplayer — BornEngine + Colyseus" },
+      targetFps: 60,
+    });
+    this.world = new GameScene(this);
+    const cubeGeometry = createCubeGeometry();
+    this.cube = new Mesh(this, cubeGeometry.vertices, cubeGeometry.indices);
+    this.client = new ColyseusClient(this, SERVER_URL);
+  }
 
-const playerName = "Player " + (Date.now() % 10_000).toString();
-client.joinOrCreateWithCallbacks<ArenaSnapshot>("arena", { name: playerName }, {
-  onJoin(joined) {
-    room = joined;
-    snapshot = joined.state;
-    status = "Conectado";
-    joined.onStateChange((nextState) => { snapshot = nextState; });
-    joined.onDrop((code, reason) => {
-      status = "Conexão interrompida (" + code.toString() + "): " + reason;
-    });
-    joined.onReconnect(() => {
-      status = "Reconectado";
-      lastInput = { x: 9, z: 9 };
-    });
-    joined.onError((error) => { status = "Erro: " + error.message; });
-    joined.onLeave((code, reason) => {
-      status = "Saiu da sala (" + code.toString() + "): " + reason;
-    });
-  },
-  onError(error) {
-    status = "Falha ao entrar: " + error.message;
-  },
-});
+  protected override onStart(): void {
+    if (this.cube.isLoaded) this.world.add(new ArenaFloor(this, this.cube));
 
-game.run({
-  update(deltaTime) {
-    if (room !== null && room.isConnected) {
-      const input = readMovementInput();
-      if (!sameInput(input, lastInput)) {
-        room.send("move", input);
-        lastInput = input;
+    const playerName = "Player " + (Date.now() % 10_000).toString();
+    this.client.joinOrCreateWithCallbacks<ArenaSnapshot>("arena", { name: playerName }, {
+      onJoin: (joined) => {
+        this.room = joined;
+        this.snapshot = joined.state;
+        this.status = "Conectado";
+        joined.onStateChange((nextState) => { this.snapshot = nextState; });
+        joined.onDrop((code, reason) => {
+          this.status = "Conexão interrompida (" + code.toString() + "): " + reason;
+        });
+        joined.onReconnect(() => {
+          this.status = "Reconectado";
+          this.lastInput = { x: 9, z: 9 };
+        });
+        joined.onError((error) => { this.status = "Erro: " + error.message; });
+        joined.onLeave((code, reason) => {
+          this.status = "Saiu da sala (" + code.toString() + "): " + reason;
+        });
+      },
+      onError: (error) => {
+        this.status = "Falha ao entrar: " + error.message;
+      },
+    });
+  }
+
+  protected override loop(deltaTime: number): void {
+    if (this.room !== null && this.room.isConnected) {
+      const input = readMovementInput(this);
+      if (!sameInput(input, this.lastInput)) {
+        this.room.send("move", input);
+        this.lastInput = input;
       }
     }
 
-    if (snapshot !== null && cube.isLoaded) {
-      syncPlayerViews(playerViews, snapshot.players, (sessionId, player) => {
-        const view = new NetworkPlayer(sessionId, player);
-        if (!view.ready || world.add(view) === null) {
+    if (this.snapshot !== null && this.cube.isLoaded) {
+      syncPlayerViews(this.playerViews, this.snapshot.players, (sessionId, player) => {
+        const view = new NetworkPlayer(this, this.cube, sessionId, player);
+        if (!view.ready || this.world.add(view) === null) {
           view.destroy();
-          status = "Não foi possível criar o GameObject de " + player.name;
+          this.status = "Não foi possível criar o GameObject de " + player.name;
           return null;
         }
         return view;
       });
     }
 
-    world.update(deltaTime);
-  },
-  render() {
-    game.renderer.clear({ r: 15, g: 20, b: 30, a: 255 });
-    game.sceneGraph.setAmbientLight(Colors.WHITE, 0.2);
-    game.sceneGraph.addDirectionalLight(
+    this.world.update(deltaTime);
+  }
+
+  protected override render(): void {
+    this.renderer.clear({ r: 15, g: 20, b: 30, a: 255 });
+    this.sceneGraph.setAmbientLight(Colors.WHITE, 0.2);
+    this.sceneGraph.addDirectionalLight(
       { x: -0.45, y: -1, z: -0.55 },
       { r: 255, g: 240, b: 209, a: 255 },
       2.8,
     );
-    if (game.renderer.begin3D(CAMERA)) game.renderer.end3D();
+    if (this.renderer.begin3D(CAMERA)) this.renderer.end3D();
 
-    const localSessionId = room === null ? "" : room.sessionId;
-    const roomId = room === null ? "procurando sala" : room.roomId;
-    game.renderer.drawText("COLYSEUS ARENA  |  " + status, { x: 24, y: 20 }, 18, { r: 245, g: 247, b: 250, a: 255 });
-    game.renderer.drawText("Sala: " + roomId, { x: 24, y: 49 }, 14, { r: 175, g: 193, b: 216, a: 255 });
-    game.renderer.drawText("WASD / setas: mover   |   Abra duas janelas para ver os dois players", { x: 24, y: 72 }, 14, { r: 175, g: 193, b: 216, a: 255 });
-    game.renderer.drawText("Estado autoritativo vindo do servidor (" + SERVER_URL + ")", { x: 24, y: 95 }, 13, { r: 130, g: 150, b: 175, a: 255 });
+    const localSessionId = this.room === null ? "" : this.room.sessionId;
+    const roomId = this.room === null ? "procurando sala" : this.room.roomId;
+    this.renderer.drawText("COLYSEUS ARENA  |  " + this.status, { x: 24, y: 20 }, 18, { r: 245, g: 247, b: 250, a: 255 });
+    this.renderer.drawText("Sala: " + roomId, { x: 24, y: 49 }, 14, { r: 175, g: 193, b: 216, a: 255 });
+    this.renderer.drawText("WASD / setas: mover   |   Abra duas janelas para ver os dois players", { x: 24, y: 72 }, 14, { r: 175, g: 193, b: 216, a: 255 });
+    this.renderer.drawText("Estado autoritativo vindo do servidor (" + SERVER_URL + ")", { x: 24, y: 95 }, 13, { r: 130, g: 150, b: 175, a: 255 });
 
-    if (snapshot !== null) {
-      const sessionIds = Object.keys(snapshot.players);
-      game.renderer.drawText("Players conectados: " + sessionIds.length.toString(), { x: 24, y: 132 }, 15, Colors.WHITE);
+    if (this.snapshot !== null) {
+      const sessionIds = Object.keys(this.snapshot.players);
+      this.renderer.drawText("Players conectados: " + sessionIds.length.toString(), { x: 24, y: 132 }, 15, Colors.WHITE);
       for (let index = 0; index < sessionIds.length; index++) {
         const sessionId = sessionIds[index];
-        const player = snapshot.players[sessionId];
+        const player = this.snapshot.players[sessionId];
         if (player === undefined) continue;
         const color = PLAYER_COLORS[normalizedColorIndex(player.color)];
         const localMarker = sessionId === localSessionId ? " (voce)" : "";
         const location = "x " + (Math.round(player.x * 10) / 10).toString() +
           "  z " + (Math.round(player.z * 10) / 10).toString();
-        game.renderer.drawText(
+        this.renderer.drawText(
           player.name + localMarker + "  |  " + location,
           { x: 24, y: 160 + index * 23 },
           14,
@@ -262,11 +270,13 @@ game.run({
         );
       }
     }
-  },
-  onStop() {
-    client.dispose();
-    world.destroy();
-    cube.dispose();
-    game.dispose();
-  },
-});
+  }
+
+  protected override onStop(): void {
+    this.client.dispose();
+    this.world.destroy();
+    this.cube.dispose();
+  }
+}
+
+new MultiplayerGame().run();
